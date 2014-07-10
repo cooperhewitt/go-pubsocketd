@@ -38,8 +38,8 @@ func main() {
 	pubsub := client.PubSub()
 	defer pubsub.Close()
 
-	e := pubsub.Subscribe("mychannel")
-	_ = e
+	err := pubsub.Subscribe("mychannel")
+	haltOnErr(err)
 
 	/* wtf... pass it a callback or something or what... */
 	msg, er := pubsub.Receive()
@@ -52,9 +52,9 @@ func main() {
         	s.ServeHTTP(w, req)
     	});
 
-	err := http.ListenAndServe("127.0.0.1:8080", nil)
+	http_err := http.ListenAndServe("127.0.0.1:8080", nil)
 
-	if err != nil {
-		panic("ListenAndServe: " + err.Error())
+	if http_err != nil {
+		panic("ListenAndServe: " + http_err.Error())
 	}
 }
