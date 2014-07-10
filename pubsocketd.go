@@ -8,34 +8,53 @@ https://github.com/golang-samples/websocket/blob/master/simple/main.go
 package main
 
 import (
-	"log"
-	"code.google.com/p/go.net/websocket"
+	/* "log" */
+	websocket "code.google.com/p/go.net/websocket"
+	"gopkg.in/redis.v1"
 	"io"
 	"net/http"
+	"fmt"
 )
 
-func createSubscription(sh * subscriptionHandler, pubChan * string){
-	log.Printf("creating channel %s",*pubChan)
- 
-	pubsub, err := redis.NewTCPClient(":6379","",-1).PubSubClient()
-	haltOnErr(err)
- 
-	ch, err := pubsub.Subscribe(*pubChan)
-	haltOnErr(err)
- 
+func haltOnErr(err error){
+	if err != nil { panic(err) }
 }
 
 func echoHandler(ws *websocket.Conn) {
 
-     	/* can I just plug createSubscription here or... ?
+
+     fmt.Println("handler...")
+
+	client := redis.NewTCPClient(&redis.Options{
+	    Addr: "localhost:6379",
+	})
+	defer client.Close()
+
+	pubsub := client.PubSub()
+	defer pubsub.Close()
+
+	err := pubsub.Subscribe("mychannel")
+	_ = err
+
+	msg, err := pubsub.Receive()
+	fmt.Println(msg, err)
+
 	io.Copy(ws, ws)
-	*/
 }
 
 func main() {
 
-	http.Handle("/", websocket.Handler(echoHandler))
-	err := http.ListenAndServe(":8080", nil)
+	fmt.Println("foo")
+
+	/* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go */
+
+	http.HandleFunc("/",
+    func (w http.ResponseWriter, req *http.Request) {
+        s := websocket.Server{Handler: websocket.Handler(echoHandler)}
+        s.ServeHTTP(w, req)
+    });
+
+	err := http.ListenAndServe("127.0.0.1:8080", nil)
 
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())

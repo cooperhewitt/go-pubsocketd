@@ -1,0 +1,20 @@
+<html>
+<head>
+
+<script type="text/javascript">
+
+var socket = new WebSocket('ws://127.0.0.1:8080');
+console.log(socket);
+
+socket.send('go');
+
+socket.onmessage = function(e){
+	console.log(e);
+};
+
+</script>
+
+
+</head>
+<body></body>
+</html>
