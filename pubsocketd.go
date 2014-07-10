@@ -1,6 +1,9 @@
-# https://godoc.org/code.google.com/p/go.net/websocket
-# https://gist.github.com/jweir/4528042
-# https://github.com/golang-samples/websocket/blob/master/simple/main.go
+/*
+https://godoc.org/code.google.com/p/go.net/websocket
+http://blog.golang.org/spotlight-on-external-go-libraries
+https://gist.github.com/jweir/4528042
+https://github.com/golang-samples/websocket/blob/master/simple/main.go
+*/
 
 package main
 
@@ -24,8 +27,9 @@ func createSubscription(sh * subscriptionHandler, pubChan * string){
 
 func echoHandler(ws *websocket.Conn) {
 
-	# can I just plug createSubscription here or... ?
-	# io.Copy(ws, ws)
+     	/* can I just plug createSubscription here or... ?
+	io.Copy(ws, ws)
+	*/
 }
 
 func main() {
