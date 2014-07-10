@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"fmt"
+	"reflect"
 )
 
 func haltOnErr(err error){
@@ -31,7 +32,7 @@ func main() {
 	fmt.Println("foo")
 
 	client := redis.NewTCPClient(&redis.Options{
-	    Addr: "localhost:6379",
+	    Addr: "127.0.0.1:6379",
 	})
 	defer client.Close()
 
@@ -41,9 +42,17 @@ func main() {
 	err := pubsub.Subscribe("mychannel")
 	haltOnErr(err)
 
-	/* wtf... pass it a callback or something or what... */
-	msg, er := pubsub.Receive()
-	fmt.Println(msg, er)
+	/* http://golangtutorials.blogspot.com/2011/06/interfaces-in-go.html */
+
+	for{
+		fmt.Println("for")
+		msg, er := pubsub.Receive()
+		fmt.Println(msg, er)
+
+		fmt.Println(reflect.TypeOf(msg))
+	}
+
+	fmt.Println("WHAT")
 
 	/* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go */
 
