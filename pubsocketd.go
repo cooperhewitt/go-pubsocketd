@@ -18,7 +18,6 @@ import (
 	"log"
 	"flag"
 	"encoding/json"
-	_ "reflect"
 )
 
 var (
@@ -48,7 +47,8 @@ func pubSubHandler(ws *websocket.Conn) {
 		return
 	}
 
-	for {
+	for ws != nil {
+
 		i, _ := pubsub_client.Receive()
 		msg, _ := i.(*redis.Message)
 
@@ -62,11 +62,17 @@ func pubSubHandler(ws *websocket.Conn) {
 			json_err := json.Unmarshal(bytes_blob, &json_blob)
 
 			if json_err != nil{
-				log.Printf("Failed to parse JSON %s, because %s", msg.Payload, json_err.Error())
+				log.Printf("[%s][error] failed to parse JSON %s, because %s", msg.Payload, json_err.Error())
 				continue
 			}
 
-		   	websocket.JSON.Send(ws, json_blob)
+		   	send_err := websocket.JSON.Send(ws, json_blob)
+
+			if send_err != nil{
+				log.Printf("[%s][error] failed to send JSON, because %s", remote_addr, send_err.Error())
+				ws.Close()
+				break
+			}
 		}
 	}
 }
