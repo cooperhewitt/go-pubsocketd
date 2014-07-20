@@ -79,3 +79,7 @@ The code above would yield something like this:
 	Object { foo: 1, bar: 2}
 
 The rest is up to you!
+
+## See also
+
+* http://redis.io/topics/pubsub
