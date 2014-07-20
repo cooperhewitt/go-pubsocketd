@@ -13,7 +13,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"gopkg.in/redis.v1"
 	"net/http"
-	"fmt"
+	"log"
 	_ "reflect"
 )
 
@@ -45,7 +45,7 @@ func init() {
 
 func pubSubHandler(ws *websocket.Conn) {
 
-	fmt.Println("connecting!")
+	log.Printf("connecting!")
 
 	addr := redis_host + ":" + redis_port
 
@@ -82,7 +82,7 @@ func main() {
         	s.ServeHTTP(w, req)
     	});
 
-	fmt.Println("Listening on " + redis_host + ":" + redis_port + " and relaying messages from '" + redis_channel + "'")
+	log.Printf("Listening on " + redis_host + ":" + redis_port + " and relaying messages from '" + redis_channel + "'")
 
 	http_err := http.ListenAndServe("127.0.0.1:8080", nil)
 
