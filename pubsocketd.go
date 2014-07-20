@@ -4,6 +4,7 @@ http://blog.golang.org/spotlight-on-external-go-libraries
 https://gist.github.com/jweir/4528042
 https://github.com/golang-samples/websocket/blob/master/simple/main.go
 http://blog.jupo.org/2013/02/23/a-tale-of-two-queues/
+http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
 */
 
 package main
@@ -45,7 +46,6 @@ func init() {
 func pubSubHandler(ws *websocket.Conn) {
 
 	fmt.Println("connecting!")
-	// fmt.Println(ws.RemoteAddr())
 
 	addr := redis_host + ":" + redis_port
 
@@ -70,15 +70,12 @@ func pubSubHandler(ws *websocket.Conn) {
 		msg, _ := i.(*redis.Message)
 
 		if msg != nil {
-		   // fmt.Println(msg.Payload)
 		   websocket.JSON.Send(ws, msg.Payload)
 		}	
 	}
 }
 
 func main() {
-
-	/* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go */
 
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
         	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
