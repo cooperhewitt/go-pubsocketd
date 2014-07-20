@@ -17,19 +17,20 @@ import (
 )
 
 var (
-    foo = "bar"
+    redis_host = "127.0.0.1"
+    redis_port = "6379"
+    redis_channel = "pubsocketd"
+    /* see below - I have no idea what I am doing */
+    /* pubsub *redis.PubSub */
 )
 
-func haltOnErr(err error){
-	if err != nil { panic(err) }
-}
+/*
+func init() {
 
-func echoHandler(ws *websocket.Conn) {
-
-	fmt.Println("connecting!")
+	addr := redis_host + ":" + redis_port
 
 	client := redis.NewTCPClient(&redis.Options{
-	    Addr: "127.0.0.1:6379",
+	    Addr: addr,
 	})
 
 	defer client.Close()
@@ -37,11 +38,31 @@ func echoHandler(ws *websocket.Conn) {
 	pubsub := client.PubSub()
 	defer pubsub.Close()
 
-	err := pubsub.Subscribe("mychannel")
-	haltOnErr(err)
+	err := pubsub.Subscribe(redis_channel)
+}
+*/
 
-	if err != nil{
-		return
+func echoHandler(ws *websocket.Conn) {
+
+	fmt.Println("connecting!")
+	// fmt.Println(ws.RemoteAddr())
+
+	addr := redis_host + ":" + redis_port
+
+	client := redis.NewTCPClient(&redis.Options{
+	    Addr: addr,
+	})
+
+	defer client.Close()
+
+	pubsub := client.PubSub()
+	defer pubsub.Close()
+
+	err := pubsub.Subscribe(redis_channel)
+
+	if err != nil {
+	   websocket.JSON.Send(ws, "FUBAR")
+	   ws.Close()
 	}
 
 	for {
@@ -64,11 +85,11 @@ func main() {
         	s.ServeHTTP(w, req)
     	});
 
+	fmt.Println("Listening on " + redis_host + ":" + redis_port + " and relaying messages from '" + redis_channel + "'")
+
 	http_err := http.ListenAndServe("127.0.0.1:8080", nil)
 
 	if http_err != nil {
 		panic("ListenAndServe: " + http_err.Error())
 	}
-
-	fmt.Println("Listening on 127.0.0.1:8080")
 }
