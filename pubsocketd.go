@@ -20,35 +20,31 @@ import (
 )
 
 var (
-    redis_host string
-    redis_port int
-    redis_channel string
-    redis_endpoint string
-    websocket_host string
-    websocket_port int
-    websocket_endpoint string
-    pubsub_client *redis.PubSub
+	redis_host string
+	redis_port int
+	redis_channel string
+	redis_endpoint string
+	websocket_host string
+	websocket_port int
+	websocket_endpoint string
+	pubsub_client *redis.PubSub
 )
 
 func init() {
 
-     flag.StringVar(&websocket_host, "ws-host", "127.0.0.1", "Websocket host")
-     flag.IntVar(&websocket_port, "ws-port", 8080, "Websocket port")
-     flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
-     flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
-     flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
 }
 
 func pubSubHandler(ws *websocket.Conn) {
 
-	log.Printf("connecting!")
+     	remote_addr := ws.Request().RemoteAddr
+	log.Printf("[%s][connect] hello world", remote_addr)
 
 	for {
 		i, _ := pubsub_client.Receive()
 		msg, _ := i.(*redis.Message)
 
 		if msg != nil {
-		   log.Printf("[send] %s", msg.Payload)		
+		   log.Printf("[%s][send] %s", remote_addr, msg.Payload)		
 		   websocket.JSON.Send(ws, msg.Payload)
 		}	
 	}
@@ -56,18 +52,22 @@ func pubSubHandler(ws *websocket.Conn) {
 
 func main() {
 
-     // not that init() is invoked before we get here
+	flag.StringVar(&websocket_host, "ws-host", "127.0.0.1", "Websocket host")
+	flag.IntVar(&websocket_port, "ws-port", 8080, "Websocket port")
+	flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
+	flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
+	flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
 
-     flag.Parse()
+	flag.Parse()
 
-     websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
-     redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
+	websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
+	redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
 
-     client := redis.NewTCPClient(&redis.Options{
-	    Addr: redis_endpoint,
-     })
+	client := redis.NewTCPClient(&redis.Options{
+		Addr: redis_endpoint,
+	})
 
-     defer client.Close()
+	defer client.Close()
 
 	pubsub_client = client.PubSub()
 	defer pubsub_client.Close()
@@ -84,8 +84,8 @@ func main() {
         	s.ServeHTTP(w, req)
     	});
 
-	log.Printf("Listening for websocket requests on " + websocket_endpoint)
-	log.Printf("Listening for pubsub messages from " + redis_endpoint + "#" + redis_channel)
+	log.Printf("[init] listening for websocket requests on " + websocket_endpoint)
+	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + "#" + redis_channel)
 
 	http_err := http.ListenAndServe(websocket_endpoint, nil)
 

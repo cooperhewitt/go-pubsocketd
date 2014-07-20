@@ -8,13 +8,20 @@ var socket = new WebSocket('ws://127.0.0.1:8080');
 socket.onopen = function(e){
 
 	feedback("connected");
-	// console.log(e);
+	console.log(e);
 };
 
 socket.onmessage = function(rsp){
 
-	// console.log(rsp);
 	var data = rsp['data'];
+	data = JSON.parse(data);
+
+	console.log(rsp);
+	console.log(data);
+
+	data = JSON.parse(data);
+	console.log(data);
+
 	feedback(data);
 };
 
