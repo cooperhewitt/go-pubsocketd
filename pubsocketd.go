@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"flag"
+	"encoding/json"
 	_ "reflect"
 )
 
@@ -44,8 +45,18 @@ func pubSubHandler(ws *websocket.Conn) {
 		msg, _ := i.(*redis.Message)
 
 		if msg != nil {
-		   log.Printf("[%s][send] %s", remote_addr, msg.Payload)		
-		   websocket.JSON.Send(ws, msg.Payload)
+
+			log.Printf("[%s][send] %s", remote_addr, msg.Payload)
+
+			var json_blob interface{}
+			bytes_blob := []byte(msg.Payload)
+
+			err := json.Unmarshal(bytes_blob, &json_blob)
+
+			if err != nil{
+			}
+
+		   	websocket.JSON.Send(ws, json_blob)
 		}	
 	}
 }
