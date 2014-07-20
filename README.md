@@ -11,9 +11,9 @@ Listen to a Redis PubSub chanhel and then rebroadcast over WebSockets.
 
 ## Example
 
-Where:
+If we assume the following:
 
-* `server` means pubsocketd
+* `server` means pubsocketd itself
 * `client` means a websocket client, for example the same HTML/JS page in the `client` folder
 * `pubsub` means something that publishes pubsub messages
 
@@ -41,7 +41,7 @@ Something like this should be printed to your browser's console log.
 
 ### server
 
-Something like this should be printed to your `pubsocketd` 's server logs.
+Something like this should be printed to your `pubsocketd` server logs.
 
 	2014/07/20 13:43:52 [127.0.0.1:50005][connect] hello world
 
@@ -56,11 +56,13 @@ Now publish a pubsub message to the `pubsocketd` channel. This example does so u
 
 ### server
 
-Something like this should be printed to your `pubsocketd` 's server logs.
+Something like this should be printed to your `pubsocketd` server logs.
 
 	2014/07/20 13:43:57 [127.0.0.1:50005][send] {'foo': 1, 'bar': 2}
 
 ### client
+
+Let's imagine that your client is set up to simply write websocket messages to the browser's console log.
 
 	socket.onmessage = function(rsp){
 
@@ -71,5 +73,9 @@ Something like this should be printed to your `pubsocketd` 's server logs.
 		console.log(data);
 	};
 
+The code above would yield something like this:
+
 	message { target: WebSocket, data: ""{'foo': 1, 'bar': 2}"", origin: "ws://127.0.0.1:8080", lastEventId: "", isTrusted: true, eventPhase: 0, bubbles: false, cancelable: false, defaultPrevented: false, timeStamp: 1405878237791142, originalTarget: WebSocket } index.html:16
 	Object { foo: 1, bar: 2}
+
+The rest is up to you!
