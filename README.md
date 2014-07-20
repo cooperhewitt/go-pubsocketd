@@ -52,7 +52,7 @@ Now publish a pubsub message to the `pubsocketd` channel. This example does so u
 	$> python
 	import redis
 	r = redis.Redis()
-	r.publish('pubsocketd', {'foo': 1, 'bar': 2}
+	r.publish('pubsocketd', {'foo': 1, 'bar': 2})
 
 ### server
 
