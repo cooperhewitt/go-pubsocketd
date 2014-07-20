@@ -102,7 +102,7 @@ func main() {
     	});
 
 	log.Printf("[init] listening for websocket requests on " + websocket_endpoint)
-	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + "#" + redis_channel)
+	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + " sent to the " + redis_channel + " channel")
 
 	http_err := http.ListenAndServe(websocket_endpoint, nil)
 
