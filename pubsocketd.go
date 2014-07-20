@@ -13,25 +13,36 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"gopkg.in/redis.v1"
 	"net/http"
+	"fmt"
 	"log"
+	"flag"
+	_ "os"
 	_ "reflect"
 )
 
 var (
-    redis_host = "127.0.0.1"
-    redis_port = "6379"
-    redis_channel = "pubsocketd"
-    /* see below - I have no idea what I am doing */
-    /* pubsub *redis.PubSub */
+    redis_host string
+    redis_port int
+    redis_channel string
+    redis_endpoint string
+    websocket_host string
+    websocket_port int
+    websocket_endpoint string
+    pubsub *redis.PubSub
 )
 
-/*
 func init() {
 
-	addr := redis_host + ":" + redis_port
+     flag.StringVar(&websocket_host, "ws-host", "127.0.0.1", "Websocket host")
+     flag.IntVar(&websocket_port, "ws-port", 8080, "Websocket port")
+     flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
+     flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
+     flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
 
-	client := redis.NewTCPClient(&redis.Options{
-	    Addr: addr,
+     /*
+
+     client := redis.NewTCPClient(&redis.Options{
+	    Addr: redis_endpoint,
 	})
 
 	defer client.Close()
@@ -40,17 +51,15 @@ func init() {
 	defer pubsub.Close()
 
 	err := pubsub.Subscribe(redis_channel)
+	*/
 }
-*/
 
 func pubSubHandler(ws *websocket.Conn) {
 
 	log.Printf("connecting!")
 
-	addr := redis_host + ":" + redis_port
-
 	client := redis.NewTCPClient(&redis.Options{
-	    Addr: addr,
+	    Addr: redis_endpoint,
 	})
 
 	defer client.Close()
@@ -77,14 +86,22 @@ func pubSubHandler(ws *websocket.Conn) {
 
 func main() {
 
+     // not that init() is invoked before we get here
+
+     flag.Parse()
+
+     websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
+     redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
+
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
         	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
         	s.ServeHTTP(w, req)
     	});
 
-	log.Printf("Listening on " + redis_host + ":" + redis_port + " and relaying messages from '" + redis_channel + "'")
+	log.Printf("Listening for websocket requests on " + websocket_endpoint)
+	log.Printf("Listening for pubsub messages from " + redis_endpoint + "#" + redis_channel)
 
-	http_err := http.ListenAndServe("127.0.0.1:8080", nil)
+	http_err := http.ListenAndServe(websocket_endpoint, nil)
 
 	if http_err != nil {
 		panic("ListenAndServe: " + http_err.Error())
