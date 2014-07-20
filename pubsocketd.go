@@ -42,7 +42,7 @@ func init() {
 }
 */
 
-func echoHandler(ws *websocket.Conn) {
+func pubSubHandler(ws *websocket.Conn) {
 
 	fmt.Println("connecting!")
 	// fmt.Println(ws.RemoteAddr())
@@ -81,7 +81,7 @@ func main() {
 	/* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go */
 
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
-        	s := websocket.Server{Handler: websocket.Handler(echoHandler)}
+        	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
         	s.ServeHTTP(w, req)
     	});
 
