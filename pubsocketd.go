@@ -3,6 +3,7 @@ https://godoc.org/code.google.com/p/go.net/websocket
 http://blog.golang.org/spotlight-on-external-go-libraries
 https://gist.github.com/jweir/4528042
 https://github.com/golang-samples/websocket/blob/master/simple/main.go
+https://github.com/golang-samples/websocket/blob/master/websocket-chat/src/chat/server.go
 http://blog.jupo.org/2013/02/23/a-tale-of-two-queues/
 http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
 */
@@ -28,17 +29,24 @@ var (
 	websocket_host string
 	websocket_port int
 	websocket_endpoint string
-	pubsub_client *redis.PubSub
+	redis_client *redis.Client
 )
-
-func init() {
-
-}
 
 func pubSubHandler(ws *websocket.Conn) {
 
      	remote_addr := ws.Request().RemoteAddr
 	log.Printf("[%s][connect] hello world", remote_addr)
+
+	pubsub_client := redis_client.PubSub()
+	defer pubsub_client.Close()
+
+	sub_err := pubsub_client.Subscribe(redis_channel)
+
+	if sub_err != nil {
+		log.Printf("Failed to subscribe to pubsub channel %s, because %s", redis_channel, sub_err.Error())
+		ws.Close()
+		return
+	}
 
 	for {
 		i, _ := pubsub_client.Receive()
@@ -51,13 +59,15 @@ func pubSubHandler(ws *websocket.Conn) {
 			var json_blob interface{}
 			bytes_blob := []byte(msg.Payload)
 
-			err := json.Unmarshal(bytes_blob, &json_blob)
+			json_err := json.Unmarshal(bytes_blob, &json_blob)
 
-			if err != nil{
+			if json_err != nil{
+				log.Printf("Failed to parse JSON %s, because %s", msg.Payload, json_err.Error())
+				continue
 			}
 
 		   	websocket.JSON.Send(ws, json_blob)
-		}	
+		}
 	}
 }
 
@@ -74,21 +84,11 @@ func main() {
 	websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
 	redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
 
-	client := redis.NewTCPClient(&redis.Options{
+	redis_client = redis.NewTCPClient(&redis.Options{
 		Addr: redis_endpoint,
 	})
 
-	defer client.Close()
-
-	pubsub_client = client.PubSub()
-	defer pubsub_client.Close()
-
-	sub_err := pubsub_client.Subscribe(redis_channel)
-
-	if sub_err != nil {
-		err, _ := fmt.Printf("Failed to subscribe to %s, because %s", redis_channel, sub_err.Error())
-		panic(err);
-	}
+	defer redis_client.Close()
 
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
         	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
