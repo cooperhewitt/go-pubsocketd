@@ -67,15 +67,16 @@ func main() {
 	    Addr: redis_endpoint,
      })
 
-	defer client.Close()
+     defer client.Close()
 
 	pubsub_client = client.PubSub()
 	defer pubsub_client.Close()
 
-	err := pubsub_client.Subscribe(redis_channel)
+	sub_err := pubsub_client.Subscribe(redis_channel)
 
-	if err != nil {
-	panic("wuh");
+	if sub_err != nil {
+		err, _ := fmt.Printf("Failed to subscribe to %s, because %s", redis_channel, sub_err.Error())
+		panic(err);
 	}
 
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
@@ -89,6 +90,7 @@ func main() {
 	http_err := http.ListenAndServe(websocket_endpoint, nil)
 
 	if http_err != nil {
-		panic("ListenAndServe: " + http_err.Error())
+		err, _ := fmt.Printf("Failed to start websocket server, because %s", http_err.Error())
+		panic(err)
 	}
 }
