@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"log"
 	"flag"
-	_ "os"
 	_ "reflect"
 )
 
@@ -28,7 +27,7 @@ var (
     websocket_host string
     websocket_port int
     websocket_endpoint string
-    pubsub *redis.PubSub
+    pubsub_client *redis.PubSub
 )
 
 func init() {
@@ -38,47 +37,18 @@ func init() {
      flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
      flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
      flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
-
-     /*
-
-     client := redis.NewTCPClient(&redis.Options{
-	    Addr: redis_endpoint,
-	})
-
-	defer client.Close()
-
-	pubsub := client.PubSub()
-	defer pubsub.Close()
-
-	err := pubsub.Subscribe(redis_channel)
-	*/
 }
 
 func pubSubHandler(ws *websocket.Conn) {
 
 	log.Printf("connecting!")
 
-	client := redis.NewTCPClient(&redis.Options{
-	    Addr: redis_endpoint,
-	})
-
-	defer client.Close()
-
-	pubsub := client.PubSub()
-	defer pubsub.Close()
-
-	err := pubsub.Subscribe(redis_channel)
-
-	if err != nil {
-	   websocket.JSON.Send(ws, "FUBAR")
-	   ws.Close()
-	}
-
 	for {
-		i, _ := pubsub.Receive()
+		i, _ := pubsub_client.Receive()
 		msg, _ := i.(*redis.Message)
 
 		if msg != nil {
+		   log.Printf("[send] %s", msg.Payload)		
 		   websocket.JSON.Send(ws, msg.Payload)
 		}	
 	}
@@ -92,6 +62,21 @@ func main() {
 
      websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
      redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
+
+     client := redis.NewTCPClient(&redis.Options{
+	    Addr: redis_endpoint,
+     })
+
+	defer client.Close()
+
+	pubsub_client = client.PubSub()
+	defer pubsub_client.Close()
+
+	err := pubsub_client.Subscribe(redis_channel)
+
+	if err != nil {
+	panic("wuh");
+	}
 
 	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
         	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
