@@ -11,10 +11,13 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"gopkg.in/redis.v1"
-	"io"
 	"net/http"
 	"fmt"
-	"reflect"
+	_ "reflect"
+)
+
+var (
+    foo = "bar"
 )
 
 func haltOnErr(err error){
@@ -23,17 +26,12 @@ func haltOnErr(err error){
 
 func echoHandler(ws *websocket.Conn) {
 
-     	fmt.Println("handler...")
-	io.Copy(ws, ws)
-}
-
-func main() {
-
-	fmt.Println("foo")
+	fmt.Println("connecting!")
 
 	client := redis.NewTCPClient(&redis.Options{
 	    Addr: "127.0.0.1:6379",
 	})
+
 	defer client.Close()
 
 	pubsub := client.PubSub()
@@ -42,17 +40,22 @@ func main() {
 	err := pubsub.Subscribe("mychannel")
 	haltOnErr(err)
 
-	/* http://golangtutorials.blogspot.com/2011/06/interfaces-in-go.html */
-
-	for{
-		fmt.Println("for")
-		msg, er := pubsub.Receive()
-		fmt.Println(msg, er)
-
-		fmt.Println(reflect.TypeOf(msg))
+	if err != nil{
+		return
 	}
 
-	fmt.Println("WHAT")
+	for {
+		i, _ := pubsub.Receive()
+		msg, _ := i.(*redis.Message)
+
+		if msg != nil {
+		   // fmt.Println(msg.Payload)
+		   websocket.JSON.Send(ws, msg.Payload)
+		}	
+	}
+}
+
+func main() {
 
 	/* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go */
 
@@ -66,4 +69,6 @@ func main() {
 	if http_err != nil {
 		panic("ListenAndServe: " + http_err.Error())
 	}
+
+	fmt.Println("Listening on 127.0.0.1:8080")
 }

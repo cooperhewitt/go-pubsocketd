@@ -15,13 +15,20 @@ socket.onopen = function(e){
 	}, 2000);
 };
 
-socket.onmessage = function(e){
-	console.log(e);
+socket.onmessage = function(rsp){
+
+	console.log(rsp);
+	var data = rsp['data'];
+
+	var f = document.getElementById("feedback");
+	f.innerHTML = data + '<br />' + f.innerHTML;
 };
 
 </script>
 
 
 </head>
-<body></body>
+<body>
+<div id="feedback"></div>
+</body>
 </html>
