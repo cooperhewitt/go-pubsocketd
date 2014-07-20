@@ -4,25 +4,24 @@
 <script type="text/javascript">
 
 var socket = new WebSocket('ws://127.0.0.1:8080');
-console.log(socket);
 
 socket.onopen = function(e){
-	console.log(e);
 
-	setInterval(function(){
-		var dt = new Date();
-		socket.send(dt.toISOString());
-	}, 2000);
+	feedback("connected");
+	// console.log(e);
 };
 
 socket.onmessage = function(rsp){
 
-	console.log(rsp);
+	// console.log(rsp);
 	var data = rsp['data'];
-
-	var f = document.getElementById("feedback");
-	f.innerHTML = data + '<br />' + f.innerHTML;
+	feedback(data);
 };
+
+function feedback(msg){
+	var f = document.getElementById("feedback");
+	f.innerHTML = msg + '<br />' + f.innerHTML;
+}
 
 </script>
 
