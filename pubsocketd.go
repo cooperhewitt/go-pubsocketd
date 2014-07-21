@@ -28,6 +28,7 @@ var (
 	websocket_host string
 	websocket_port int
 	websocket_endpoint string
+	websocket_route string
 	redis_client *redis.Client
 )
 
@@ -81,6 +82,8 @@ func main() {
 
 	flag.StringVar(&websocket_host, "ws-host", "127.0.0.1", "Websocket host")
 	flag.IntVar(&websocket_port, "ws-port", 8080, "Websocket port")
+	flag.StringVar(&websocket_route, "ws-route", "/", "Websocket route")
+
 	flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
 	flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
 	flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
@@ -96,12 +99,12 @@ func main() {
 
 	defer redis_client.Close()
 
-	http.HandleFunc("/", func (w http.ResponseWriter, req *http.Request){
+	http.HandleFunc(websocket_route, func (w http.ResponseWriter, req *http.Request){
         	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
         	s.ServeHTTP(w, req)
     	});
 
-	log.Printf("[init] listening for websocket requests on " + websocket_endpoint)
+	log.Printf("[init] listening for websocket requests on " + websocket_endpoint + websocket_route)
 	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + " sent to the " + redis_channel + " channel")
 
 	http_err := http.ListenAndServe(websocket_endpoint, nil)
