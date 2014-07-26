@@ -21,56 +21,49 @@ import (
 )
 
 var (
-	redis_host         string
-	redis_port         int
-	redis_channel      string
-	redis_endpoint     string
-	websocket_host     string
-	websocket_port     int
-	websocket_endpoint string
-	websocket_route    string
-	redis_client       *redis.Client
+	redisHost         string
+	redisPort         int
+	redisChannel      string
+	redisEndpoint     string
+	websocketHost     string
+	websocketPort     int
+	websocketEndpoint string
+	websocketRoute    string
+	redisClient       *redis.Client
 )
 
 func pubSubHandler(ws *websocket.Conn) {
 
-	remote_addr := ws.Request().RemoteAddr
-	log.Printf("[%s][connect] hello world", remote_addr)
+	remoteAddr := ws.Request().RemoteAddr
+	log.Printf("[%s][connect] hello world", remoteAddr)
 
-	pubsub_client := redis_client.PubSub()
-	defer pubsub_client.Close()
+	pubsubClient := redisClient.PubSub()
+	defer pubsubClient.Close()
 
-	sub_err := pubsub_client.Subscribe(redis_channel)
-
-	if sub_err != nil {
-		log.Printf("Failed to subscribe to pubsub channel %s, because %s", redis_channel, sub_err.Error())
+	if err := pubsubClient.Subscribe(redisChannel); err != nil {
+		log.Printf("Failed to subscribe to pubsub channel %v, because %s", redisChannel, err)
 		ws.Close()
 		return
 	}
 
 	for ws != nil {
 
-		i, _ := pubsub_client.Receive()
-		msg, _ := i.(*redis.Message)
+		i, _ := pubsubClient.Receive()
 
-		if msg != nil {
+		if msg, _ := i.(*redis.Message); msg != nil {
 
-			log.Printf("[%s][send] %s", remote_addr, msg.Payload)
+			log.Printf("[%s][send] %s", remoteAddr, msg.Payload)
 
 			var json_blob interface{}
 			bytes_blob := []byte(msg.Payload)
 
-			json_err := json.Unmarshal(bytes_blob, &json_blob)
-
-			if json_err != nil {
-				log.Printf("[%s][error] failed to parse JSON %s, because %s", msg.Payload, json_err.Error())
+			if err := json.Unmarshal(bytes_blob, &json_blob); err != nil {
+				log.Printf("[%s][error] failed to parse JSON %s, because %v", msg.Payload, err)
 				continue
 			}
 
-			send_err := websocket.JSON.Send(ws, json_blob)
-
-			if send_err != nil {
-				log.Printf("[%s][error] failed to send JSON, because %s", remote_addr, send_err.Error())
+			if err := websocket.JSON.Send(ws, json_blob); err != nil {
+				log.Printf("[%v][error] failed to send JSON, because %v", remoteAddr, err)
 				ws.Close()
 				break
 			}
@@ -78,39 +71,39 @@ func pubSubHandler(ws *websocket.Conn) {
 	}
 }
 
+func websocketHandler(w http.ResponseWriter, req *http.Request) {
+	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
+	s.ServeHTTP(w, req)
+}
+
 func main() {
 
-	flag.StringVar(&websocket_host, "ws-host", "127.0.0.1", "Websocket host")
-	flag.IntVar(&websocket_port, "ws-port", 8080, "Websocket port")
-	flag.StringVar(&websocket_route, "ws-route", "/", "Websocket route")
+	flag.StringVar(&websocketHost, "ws-host", "127.0.0.1", "Websocket host")
+	flag.IntVar(&websocketPort, "ws-port", 8080, "Websocket port")
+	flag.StringVar(&websocketRoute, "ws-route", "/", "Websocket route")
 
-	flag.StringVar(&redis_host, "rs-host", "127.0.0.1", "Redis host")
-	flag.IntVar(&redis_port, "rs-port", 6379, "Redis port")
-	flag.StringVar(&redis_channel, "rs-channel", "pubsocketd", "Redis channel")
+	flag.StringVar(&redisHost, "rs-host", "127.0.0.1", "Redis host")
+	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
+	flag.StringVar(&redisChannel, "rs-channel", "pubsocketd", "Redis channel")
 
 	flag.Parse()
 
-	websocket_endpoint = fmt.Sprintf("%s:%d", websocket_host, websocket_port)
-	redis_endpoint = fmt.Sprintf("%s:%d", redis_host, redis_port)
+	websocketEndpoint = fmt.Sprintf("%s:%d", websocketHost, websocketPort)
+	redisEndpoint = fmt.Sprintf("%s:%d", redisHost, redisPort)
 
-	redis_client = redis.NewTCPClient(&redis.Options{
-		Addr: redis_endpoint,
+	redisClient = redis.NewTCPClient(&redis.Options{
+		Addr: redisEndpoint,
 	})
 
-	defer redis_client.Close()
+	defer redisClient.Close()
 
-	http.HandleFunc(websocket_route, func(w http.ResponseWriter, req *http.Request) {
-		s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
-		s.ServeHTTP(w, req)
-	})
+	http.HandleFunc(websocketRoute, websocketHandler)
 
-	log.Printf("[init] listening for websocket requests on " + websocket_endpoint + websocket_route)
-	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + " sent to the " + redis_channel + " channel")
+	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute)
+	log.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")
 
-	http_err := http.ListenAndServe(websocket_endpoint, nil)
-
-	if http_err != nil {
-		err, _ := fmt.Printf("Failed to start websocket server, because %s", http_err.Error())
+	if err := http.ListenAndServe(websocketEndpoint, nil); err != nil {
+		err, _ := fmt.Printf("Failed to start websocket server, because %v", err)
 		panic(err)
 	}
 }
