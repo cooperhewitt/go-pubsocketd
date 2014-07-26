@@ -12,29 +12,29 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"gopkg.in/redis.v1"
-	"net/http"
-	"fmt"
-	"log"
-	"flag"
 	"encoding/json"
+	"flag"
+	"fmt"
+	"gopkg.in/redis.v1"
+	"log"
+	"net/http"
 )
 
 var (
-	redis_host string
-	redis_port int
-	redis_channel string
-	redis_endpoint string
-	websocket_host string
-	websocket_port int
+	redis_host         string
+	redis_port         int
+	redis_channel      string
+	redis_endpoint     string
+	websocket_host     string
+	websocket_port     int
 	websocket_endpoint string
-	websocket_route string
-	redis_client *redis.Client
+	websocket_route    string
+	redis_client       *redis.Client
 )
 
 func pubSubHandler(ws *websocket.Conn) {
 
-     	remote_addr := ws.Request().RemoteAddr
+	remote_addr := ws.Request().RemoteAddr
 	log.Printf("[%s][connect] hello world", remote_addr)
 
 	pubsub_client := redis_client.PubSub()
@@ -62,14 +62,14 @@ func pubSubHandler(ws *websocket.Conn) {
 
 			json_err := json.Unmarshal(bytes_blob, &json_blob)
 
-			if json_err != nil{
+			if json_err != nil {
 				log.Printf("[%s][error] failed to parse JSON %s, because %s", msg.Payload, json_err.Error())
 				continue
 			}
 
-		   	send_err := websocket.JSON.Send(ws, json_blob)
+			send_err := websocket.JSON.Send(ws, json_blob)
 
-			if send_err != nil{
+			if send_err != nil {
 				log.Printf("[%s][error] failed to send JSON, because %s", remote_addr, send_err.Error())
 				ws.Close()
 				break
@@ -99,10 +99,10 @@ func main() {
 
 	defer redis_client.Close()
 
-	http.HandleFunc(websocket_route, func (w http.ResponseWriter, req *http.Request){
-        	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
-        	s.ServeHTTP(w, req)
-    	});
+	http.HandleFunc(websocket_route, func(w http.ResponseWriter, req *http.Request) {
+		s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
+		s.ServeHTTP(w, req)
+	})
 
 	log.Printf("[init] listening for websocket requests on " + websocket_endpoint + websocket_route)
 	log.Printf("[init] listening for pubsub messages from " + redis_endpoint + " sent to the " + redis_channel + " channel")
