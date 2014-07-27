@@ -129,6 +129,8 @@ Currently multiple hosts are not supported but will be in time.
 * https://github.com/golang-samples/websocket/blob/master/websocket-chat/src/chat/server.go
 * http://blog.jupo.org/2013/02/23/a-tale-of-two-queues/
 * http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
+* http://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
+* http://tools.ietf.org/id/draft-abarth-origin-03.html
 
 ## Shout-outs
 
