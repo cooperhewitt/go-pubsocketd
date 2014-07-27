@@ -8,33 +8,96 @@ import (
 	"gopkg.in/redis.v1"
 	"log"
 	"net/http"
+	"net/url"
+	_ "strings"
 )
 
 var (
-	redisHost         string
-	redisPort         int
-	redisChannel      string
-	redisEndpoint     string
-	websocketHost     string
-	websocketPort     int
-	websocketEndpoint string
-	websocketRoute    string
-	redisClient       *redis.Client
+	redisHost                string
+	redisPort                int
+	redisChannel             string
+	redisEndpoint            string
+	websocketHost            string
+	websocketPort            int
+	websocketEndpoint        string
+	websocketRoute           string
+	websocketAllowableOrigin string
+	websocketAllowableURLs   []url.URL
+	redisClient              *redis.Client
 )
+
+func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
+
+	// Say what? See comments below where we assign http.HandleFunc
+	// (20140727/straup)
+
+	origin := websocketAllowableOrigin
+	url, err := url.Parse(origin)
+
+	if err != nil {
+		err, _ := fmt.Printf("Failed to start websocket server, because Origin URL '%v' won't parse, %v", origin, err)
+		panic(err)
+	}
+
+	config := websocket.Config{Origin: url}
+
+	s := websocket.Server{
+		Config:    config,
+		Handler:   websocket.Handler(pubSubHandler),
+		Handshake: pubsocketdHandshake,
+	}
+
+	s.ServeHTTP(w, req)
+}
+
+func pubsocketdHandshake(config *websocket.Config, req *http.Request) (err error) {
+
+	remoteAddr := req.RemoteAddr
+	headers := req.Header
+
+	origin := headers.Get("Origin")
+	realIP := headers.Get("X-Real-IP")
+
+	if origin == "" {
+		log.Printf("[%s][%s][handshake] missing origin", realIP, remoteAddr)
+		return fmt.Errorf("missing origin")
+	}
+
+	parsed, err := url.Parse(origin)
+
+	if err != nil {
+		log.Printf("[%s][%s][handshake] failed to parse origin, %v", realIP, remoteAddr, origin)
+		return fmt.Errorf("invalid origin")
+	}
+
+	if parsed.String() != config.Origin.String() {
+		log.Printf("[%s][%s][handshake] invalid origin, %v", realIP, remoteAddr, parsed)
+		return fmt.Errorf("invalid origin")
+	}
+
+	log.Printf("[%s][%s][handshake] OK", realIP, remoteAddr)
+	return
+}
 
 func pubSubHandler(ws *websocket.Conn) {
 
 	remoteAddr := ws.Request().RemoteAddr
-	log.Printf("[%s][connect] hello world", remoteAddr)
+	headers := ws.Request().Header
+
+	realIP := headers.Get("X-Real-IP")
+
+	log.Printf("[%s][%s][request] OK", realIP, remoteAddr)
 
 	pubsubClient := redisClient.PubSub()
 	defer pubsubClient.Close()
 
 	if err := pubsubClient.Subscribe(redisChannel); err != nil {
-		log.Printf("Failed to subscribe to pubsub channel %v, because %s", redisChannel, err)
+		log.Printf("[%s][%s][error] failed to subscribe to pubsub channel %v, because %s", realIP, remoteAddr, redisChannel, err)
 		ws.Close()
 		return
 	}
+
+	log.Printf("[%s][%s][connect] OK", realIP, remoteAddr)
 
 	for ws != nil {
 
@@ -42,28 +105,25 @@ func pubSubHandler(ws *websocket.Conn) {
 
 		if msg, _ := i.(*redis.Message); msg != nil {
 
-			log.Printf("[%s][send] %s", remoteAddr, msg.Payload)
+			// log.Printf("[%s][%s][send] %s", realIP, remoteAddr, msg.Payload)
 
 			var json_blob interface{}
 			bytes_blob := []byte(msg.Payload)
 
 			if err := json.Unmarshal(bytes_blob, &json_blob); err != nil {
-				log.Printf("[%s][error] failed to parse JSON %s, because %v", msg.Payload, err)
+				log.Printf("[%s][%s][error] failed to parse JSON %v, because %v", realIP, remoteAddr, msg.Payload, err)
 				continue
 			}
 
 			if err := websocket.JSON.Send(ws, json_blob); err != nil {
-				log.Printf("[%v][error] failed to send JSON, because %v", remoteAddr, err)
+				log.Printf("[%s][%s][error] failed to send JSON, because %v", realIP, remoteAddr, err)
 				ws.Close()
 				break
 			}
+
+			log.Printf("[%s][%s][send] OK", realIP, remoteAddr)
 		}
 	}
-}
-
-func websocketHandler(w http.ResponseWriter, req *http.Request) {
-	s := websocket.Server{Handler: websocket.Handler(pubSubHandler)}
-	s.ServeHTTP(w, req)
 }
 
 func main() {
@@ -71,12 +131,39 @@ func main() {
 	flag.StringVar(&websocketHost, "ws-host", "127.0.0.1", "Websocket host")
 	flag.IntVar(&websocketPort, "ws-port", 8080, "Websocket port")
 	flag.StringVar(&websocketRoute, "ws-route", "/", "Websocket route")
+	flag.StringVar(&websocketAllowableOrigin, "ws-origin", "", "Websocket allowable origins")
 
 	flag.StringVar(&redisHost, "rs-host", "127.0.0.1", "Redis host")
 	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
 	flag.StringVar(&redisChannel, "rs-channel", "pubsocketd", "Redis channel")
 
 	flag.Parse()
+
+	if websocketAllowableOrigin == "" {
+		err, _ := fmt.Printf("Missing allowable Origin (-ws-origin=http://example.com)")
+		panic(err)
+	}
+
+	/*
+		allowed := strings.Split(websocketAllowableOrigin, ",")
+
+		for _, test := range allowed {
+
+			test := strings.TrimSpace(test)
+
+			url, err := url.Parse(test)
+
+			if err != nil {
+				err, _ := fmt.Printf("Invalid Origin parameter: %v, %v", test, err)
+				panic(err)
+			}
+
+			log.Printf("%v, %T", url, url)
+
+			omgwtf := []url.URL{ url }
+			append(websocketAllowableURLs, omgwtf)
+		}
+	*/
 
 	websocketEndpoint = fmt.Sprintf("%s:%d", websocketHost, websocketPort)
 	redisEndpoint = fmt.Sprintf("%s:%d", redisHost, redisPort)
@@ -87,7 +174,18 @@ func main() {
 
 	defer redisClient.Close()
 
-	http.HandleFunc(websocketRoute, websocketHandler)
+	// Normally this is the sort of thing you'd expect to do
+	// http.Handle(websocketRoute, websocket.Handler(pubSubHandler))
+	// However since we're going to be aggressively paranoid about checking
+	// the Origin headers we're going to set up our own websocket Server
+	// thingy complete with custom Config and Handshake directive and
+	// pass the whole thing off to HandleFunc (20140727/straup)
+
+	// See also:
+	// http://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
+	// https://code.google.com/p/go/source/browse/websocket/server.go?repo=net
+
+	http.HandleFunc(websocketRoute, pubsocketdHandler)
 
 	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute)
 	log.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")
