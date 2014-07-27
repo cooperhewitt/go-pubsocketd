@@ -33,7 +33,9 @@ func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
 	// (20140727/straup)
 
 	// This is meant to be a list of URLs but since I don't really
-	// grok arrays in Go yet... it's not (20140727/straup)
+	// grok arrays in Go yet... The point being to goal is to assign
+	// websocketAllowableURLs to the Config struct which will have
+	// been populated below (20140727/straup)
 
 	origin := websocketAllowableOrigins
 	url, err := url.Parse(origin)
@@ -43,12 +45,12 @@ func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	config := websocket.Config{Origin: url}
+	pubsocketdConfig := websocket.Config{Origin: url}
 
 	s := websocket.Server{
-		Config:    config,
-		Handler:   websocket.Handler(pubSubHandler),
+		Config:    pubsocketdConfig,
 		Handshake: pubsocketdHandshake,
+		Handler:   websocket.Handler(pubSubHandler),
 	}
 
 	s.ServeHTTP(w, req)
