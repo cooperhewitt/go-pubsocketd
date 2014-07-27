@@ -91,31 +91,33 @@ The rest is up to you!
 
 ### -rs-channel="pubsocketd"
 
-Redis channel
+The Redis channel you want to listen (and relay messages for).
 
 ### -rs-host="127.0.0.1"
 
-Redis host
+The Redis host you are connecting to.
 
 ### -rs-port=6379
 
-Redis port
+The Redis port you are connecting to.
 
 ### -ws-host="127.0.0.1"
 
-Websocket host
-
-### -ws-origin=""
-
-Websocket allowable origins
+The host that this server will listen for connections on.
 
 ### -ws-port=8080
 
-Websocket port
+The port that this server will listen for connections on.
 
 ### -ws-route="/"
 
-Websocket route
+The path that this server will listen for connections on.
+
+### -ws-origin=""
+
+A list of valid hosts that may connect to this server.
+
+Currently multiple hosts are not supported but will be in time.
 
 ## See also
 
