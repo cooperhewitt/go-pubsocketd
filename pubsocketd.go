@@ -184,8 +184,9 @@ func main() {
 
 	defer redisClient.Close()
 
-	// Normally this is the sort of thing you'd expect to do
+	// Normally this is the sort of thing you'd expect to do:
 	// http.Handle(websocketRoute, websocket.Handler(pubSubHandler))
+
 	// However since we're going to be aggressively paranoid about checking
 	// the Origin headers we're going to set up our own websocket Server
 	// thingy complete with custom Config and Handshake directive and
@@ -197,7 +198,7 @@ func main() {
 
 	http.HandleFunc(websocketRoute, pubsocketdHandler)
 
-	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute)
+	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute + ", from " + websocketAllowableOrigins)
 	log.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")
 
 	if err := http.ListenAndServe(websocketEndpoint, nil); err != nil {
