@@ -9,6 +9,11 @@ Listen to a Redis PubSub chanhel and then rebroadcast over WebSockets.
 	$> go get gopkg.in/redis.v1
 	$> go build pubsocketd.go
 
+Or, if you are working on a system with the `make` command installed:
+
+	$> make deps
+	$> make build
+
 ## Example
 
 If we assume the following:
@@ -21,9 +26,11 @@ If we assume the following:
 
 The first thing to do is start the `pubsocketd` server to accept websocket connections and relay pubsub messages.
 
-	$> ./pubsocketd 
+	$> ./pubsocketd -ws-origin=http://example.com
 	2014/07/20 13:43:50 [init] listening for websocket requests on 127.0.0.1:8080
 	2014/07/20 13:43:50 [init] listening for pubsub messages from 127.0.0.1:6379#pubsocketd
+
+See the `-ws-origin` flag? That's important and is discussed in detail below.
 
 ### client
 
@@ -79,6 +86,36 @@ The code above would yield something like this:
 	Object { foo: 1, bar: 2}
 
 The rest is up to you!
+
+## pubsocketd command-line options
+
+### -rs-channel="pubsocketd"
+
+Redis channel
+
+### -rs-host="127.0.0.1"
+
+Redis host
+
+### -rs-port=6379
+
+Redis port
+
+### -ws-host="127.0.0.1"
+
+Websocket host
+
+### -ws-origin=""
+
+Websocket allowable origins
+
+### -ws-port=8080
+
+Websocket port
+
+### -ws-route="/"
+
+Websocket route
 
 ## See also
 
