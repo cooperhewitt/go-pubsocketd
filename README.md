@@ -4,7 +4,7 @@ Listen to a Redis PubSub chanhel and then rebroadcast over WebSockets.
 
 ## Building
 
-	$> setenv GOPATH /path/to/go-pubsocketd
+	$> export GOPATH=/path/to/go-pubsocketd
 	$> go get code.google.com/p/go.net/websocket
 	$> go get gopkg.in/redis.v1
 	$> go build pubsocketd.go
@@ -83,3 +83,14 @@ The rest is up to you!
 ## See also
 
 * http://redis.io/topics/pubsub
+* https://godoc.org/code.google.com/p/go.net/websocket
+* http://blog.golang.org/spotlight-on-external-go-libraries
+* https://gist.github.com/jweir/4528042
+* https://github.com/golang-samples/websocket/blob/master/simple/main.go
+* https://github.com/golang-samples/websocket/blob/master/websocket-chat/src/chat/server.go
+* http://blog.jupo.org/2013/02/23/a-tale-of-two-queues/
+* http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
+
+## Shout-outs
+
+Props to [Richard Crowley](https://github.com/rcrowley) for patient comments and suggestions along the way.

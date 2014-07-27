@@ -1,13 +1,3 @@
-/*
-https://godoc.org/code.google.com/p/go.net/websocket
-http://blog.golang.org/spotlight-on-external-go-libraries
-https://gist.github.com/jweir/4528042
-https://github.com/golang-samples/websocket/blob/master/simple/main.go
-https://github.com/golang-samples/websocket/blob/master/websocket-chat/src/chat/server.go
-http://blog.jupo.org/2013/02/23/a-tale-of-two-queues/
-http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
-*/
-
 package main
 
 import (
