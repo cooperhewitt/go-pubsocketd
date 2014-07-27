@@ -87,7 +87,9 @@ func main() {
 
 	defer redisClient.Close()
 
-	http.HandleFunc(websocketRoute, websocketHandler)
+	//http.HandleFunc(websocketRoute, websocketHandler)
+
+	http.Handle(websocketRoute, websocket.Handler(pubSubHandler))
 
 	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute)
 	log.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")

@@ -5,6 +5,10 @@
 
 var socket = new WebSocket('ws://127.0.0.1:8080');
 
+socket.onerror = function(e){
+	console.log(e);
+};
+
 socket.onopen = function(e){
 
 	feedback("connected");
