@@ -26,10 +26,21 @@ var (
 	redisClient               *redis.Client
 )
 
+// What I'd really like to do is pass in a list of allowable Origin
+// URLs but the signature for websocket.Config only allows a single
+// url.URL thingy and trying to subclass it resulted in a cascading
+// series of "unexpected yak" style errors from the compilers. It
+// seems like something that must be possible but my Go-fu is still
+// weak... (20140729/straup)
+
+// type pubsocketdConfig struct {
+//     websocket.Config
+//     Origin []url.URL
+// }
+
 func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
 
-	// config := pubsocketdConfig{Origin: websocketAllowableURLs}
-	// log.Printf("config %v", config)
+	// See above (20140729/straup)
 
 	originURL := websocketAllowableURLs[0]
 
@@ -61,14 +72,14 @@ func pubsocketdHandshake(config *websocket.Config, req *http.Request) (err error
 
 	if err != nil {
 		log.Printf("[%s][%s][handshake] failed to parse origin, %v", realIP, remoteAddr, origin)
-		return fmt.Errorf("invalid origin")
+		return fmt.Errorf("failed to parse origin")
 	}
 
 	// See above inre: config.Origin being/becoming a list of url.URLs
 	// (20140727/straup)
 
 	if parsed.String() != config.Origin.String() {
-		log.Printf("[%s][%s][handshake] invalid origin, %v", realIP, remoteAddr, parsed)
+		log.Printf("[%s][%s][handshake] invalid origin, expected %v but got %v", realIP, remoteAddr, config.Origin, parsed)
 		return fmt.Errorf("invalid origin")
 	}
 
@@ -128,7 +139,7 @@ func main() {
 	flag.StringVar(&websocketHost, "ws-host", "127.0.0.1", "Websocket host")
 	flag.IntVar(&websocketPort, "ws-port", 8080, "Websocket port")
 	flag.StringVar(&websocketRoute, "ws-route", "/", "Websocket route")
-	flag.StringVar(&websocketAllowableOrigins, "ws-origin", "", "Websocket allowable origins")
+	flag.StringVar(&websocketAllowableOrigins, "ws-origin", "", "Websocket allowable origin")
 
 	flag.StringVar(&redisHost, "rs-host", "127.0.0.1", "Redis host")
 	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
