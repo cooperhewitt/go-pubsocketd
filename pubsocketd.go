@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	_ "strings"
+	"strings"
 )
 
 var (
@@ -22,30 +22,18 @@ var (
 	websocketEndpoint         string
 	websocketRoute            string
 	websocketAllowableOrigins string
-	// see below (20140727/straup)
-	// websocketAllowableURLs   []url.URL
-	redisClient *redis.Client
+	websocketAllowableURLs    []url.URL
+	redisClient               *redis.Client
 )
 
 func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
 
-	// Say what? See comments below where we assign http.HandleFunc
-	// (20140727/straup)
+	// config := pubsocketdConfig{Origin: websocketAllowableURLs}
+	// log.Printf("config %v", config)
 
-	// This is meant to be a list of URLs but since I don't really
-	// grok arrays in Go yet... The point being to goal is to assign
-	// websocketAllowableURLs to the Config struct which will have
-	// been populated below (20140727/straup)
+	originURL := websocketAllowableURLs[0]
 
-	origin := websocketAllowableOrigins
-	url, err := url.Parse(origin)
-
-	if err != nil {
-		err, _ := fmt.Printf("Failed to start websocket server, because Origin URL '%v' won't parse, %v", origin, err)
-		panic(err)
-	}
-
-	pubsocketdConfig := websocket.Config{Origin: url}
+	pubsocketdConfig := websocket.Config{Origin: &originURL}
 
 	s := websocket.Server{
 		Config:    pubsocketdConfig,
@@ -153,29 +141,29 @@ func main() {
 		panic(err)
 	}
 
-	// Because I still don't really understand how arrays work in Go...
-	// (20140727/straup)
+	allowed := strings.Split(websocketAllowableOrigins, ",")
+	count := len(allowed)
 
-	/*
-		allowed := strings.Split(websocketAllowableOrigins, ",")
+	if count > 1 {
+		err, _ := fmt.Printf("Only one origin server is supported at the moment")
+		panic(err)
+	}
 
-		for _, test := range allowed {
+	websocketAllowableURLs = make([]url.URL, 0, count)
 
-			test := strings.TrimSpace(test)
+	for _, test := range allowed {
 
-			url, err := url.Parse(test)
+		test := strings.TrimSpace(test)
 
-			if err != nil {
-				err, _ := fmt.Printf("Invalid Origin parameter: %v, %v", test, err)
-				panic(err)
-			}
+		url, err := url.Parse(test)
 
-			log.Printf("%v, %T", url, url)
-
-			omgwtf := []url.URL{ url }
-			append(websocketAllowableURLs, omgwtf)
+		if err != nil {
+			err, _ := fmt.Printf("Invalid Origin parameter: %v, %v", test, err)
+			panic(err)
 		}
-	*/
+
+		websocketAllowableURLs = append(websocketAllowableURLs, *url)
+	}
 
 	websocketEndpoint = fmt.Sprintf("%s:%d", websocketHost, websocketPort)
 	redisEndpoint = fmt.Sprintf("%s:%d", redisHost, redisPort)
