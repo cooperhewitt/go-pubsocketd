@@ -89,6 +89,8 @@ The rest is up to you!
 
 ## pubsocketd command-line options
 
+In addition to the default command-line options exported by any Go application the following can be specified:
+
 ### -rs-channel="pubsocketd"
 
 The Redis channel you want to listen (and relay messages for).
@@ -113,7 +115,7 @@ The port that this server will listen for connections on.
 
 The path that this server will listen for connections on.
 
-### -ws-origin=""
+### -ws-origin= _required_
 
 A list of valid hosts that may connect to this server.
 
