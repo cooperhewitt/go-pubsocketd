@@ -133,7 +133,8 @@ Currently multiple hosts are not supported but will be in time.
 * http://stackoverflow.com/questions/19708330/serving-a-websocket-in-go
 * http://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
 * http://tools.ietf.org/id/draft-abarth-origin-03.html
-
+* https://github.com/mroth/sseserver
+ 
 ## Shout-outs
 
 Props to [Richard Crowley](https://github.com/rcrowley) for patient comments and suggestions along the way.
