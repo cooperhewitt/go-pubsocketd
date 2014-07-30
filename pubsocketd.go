@@ -33,6 +33,14 @@ var (
 // seems like something that must be possible but my Go-fu is still
 // weak... (20140729/straup)
 
+// From Crowley (20140729):
+// As for your multiple origins problem:  I recommend you construct
+// a map[string]*websocket.Server mapping your full set of origins.
+// Do that before you start serving traffic and then you can access
+// the map without locks.  Each of those *websocket.Server values
+// implements the http.Handler interface so you can in your handler
+// look up the right one for the origin and call its ServeHTTP method.
+
 // type pubsocketdConfig struct {
 //     websocket.Config
 //     Origin []url.URL
