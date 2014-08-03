@@ -21,6 +21,7 @@ var (
 	websocketPort             int
 	websocketEndpoint         string
 	websocketRoute            string
+	websocketAllowInsecure    bool
 	websocketAllowableOrigins string
 	websocketAllowableURLs    []url.URL
 	redisClient               *redis.Client
@@ -50,17 +51,29 @@ func pubsocketdHandler(w http.ResponseWriter, req *http.Request) {
 
 	// See above (20140729/straup)
 
-	originURL := websocketAllowableURLs[0]
+	if websocketAllowInsecure {
 
-	pubsocketdConfig := websocket.Config{Origin: &originURL}
+		s := websocket.Server{
+			Handler: websocket.Handler(pubSubHandler),
+		}
 
-	s := websocket.Server{
-		Config:    pubsocketdConfig,
-		Handshake: pubsocketdHandshake,
-		Handler:   websocket.Handler(pubSubHandler),
+		s.ServeHTTP(w, req)
+
+	} else {
+
+		originURL := websocketAllowableURLs[0]
+
+		pubsocketdConfig := websocket.Config{Origin: &originURL}
+
+		s := websocket.Server{
+			Config:    pubsocketdConfig,
+			Handshake: pubsocketdHandshake,
+			Handler:   websocket.Handler(pubSubHandler),
+		}
+
+		s.ServeHTTP(w, req)
 	}
 
-	s.ServeHTTP(w, req)
 }
 
 func pubsocketdHandshake(config *websocket.Config, req *http.Request) (err error) {
@@ -144,10 +157,11 @@ func pubSubHandler(ws *websocket.Conn) {
 
 func main() {
 
-	flag.StringVar(&websocketHost, "ws-host", "127.0.0.1", "Websocket host")
-	flag.IntVar(&websocketPort, "ws-port", 8080, "Websocket port")
-	flag.StringVar(&websocketRoute, "ws-route", "/", "Websocket route")
-	flag.StringVar(&websocketAllowableOrigins, "ws-origin", "", "Websocket allowable origin")
+	flag.StringVar(&websocketHost, "ws-host", "127.0.0.1", "WebSocket host")
+	flag.IntVar(&websocketPort, "ws-port", 8080, "WebSocket port")
+	flag.StringVar(&websocketRoute, "ws-route", "/", "WebSocket route")
+	flag.StringVar(&websocketAllowableOrigins, "ws-origin", "", "WebSocket allowable origin(s)")
+	flag.BoolVar(&websocketAllowInsecure, "ws-insecure", false, "Allow WebSocket server to run in insecure mode")
 
 	flag.StringVar(&redisHost, "rs-host", "127.0.0.1", "Redis host")
 	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
@@ -155,33 +169,35 @@ func main() {
 
 	flag.Parse()
 
-	if websocketAllowableOrigins == "" {
-		err, _ := fmt.Printf("Missing allowable Origin (-ws-origin=http://example.com)")
-		panic(err)
-	}
-
-	allowed := strings.Split(websocketAllowableOrigins, ",")
-	count := len(allowed)
-
-	if count > 1 {
-		err, _ := fmt.Printf("Only one origin server is supported at the moment")
-		panic(err)
-	}
-
-	websocketAllowableURLs = make([]url.URL, 0, count)
-
-	for _, test := range allowed {
-
-		test := strings.TrimSpace(test)
-
-		url, err := url.Parse(test)
-
-		if err != nil {
-			err, _ := fmt.Printf("Invalid Origin parameter: %v, %v", test, err)
+	if !websocketAllowInsecure {
+		if websocketAllowableOrigins == "" {
+			err, _ := fmt.Printf("Missing allowable Origin (-ws-origin=http://example.com)")
 			panic(err)
 		}
 
-		websocketAllowableURLs = append(websocketAllowableURLs, *url)
+		allowed := strings.Split(websocketAllowableOrigins, ",")
+		count := len(allowed)
+
+		if count > 1 {
+			err, _ := fmt.Printf("Only one origin server is supported at the moment")
+			panic(err)
+		}
+
+		websocketAllowableURLs = make([]url.URL, 0, count)
+
+		for _, test := range allowed {
+
+			test := strings.TrimSpace(test)
+
+			url, err := url.Parse(test)
+
+			if err != nil {
+				err, _ := fmt.Printf("Invalid Origin parameter: %v, %v", test, err)
+				panic(err)
+			}
+
+			websocketAllowableURLs = append(websocketAllowableURLs, *url)
+		}
 	}
 
 	websocketEndpoint = fmt.Sprintf("%s:%d", websocketHost, websocketPort)
@@ -207,7 +223,13 @@ func main() {
 
 	http.HandleFunc(websocketRoute, pubsocketdHandler)
 
-	log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute + ", from " + websocketAllowableOrigins)
+	if websocketAllowInsecure {
+		log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute + ", in INSECURE MODE which is not advised for production use")
+
+	} else {
+		log.Printf("[init] listening for websocket requests on " + websocketEndpoint + websocketRoute + ", from " + websocketAllowableOrigins)
+	}
+
 	log.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")
 
 	if err := http.ListenAndServe(websocketEndpoint, nil); err != nil {

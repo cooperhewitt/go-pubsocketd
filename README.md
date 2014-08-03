@@ -19,12 +19,12 @@ Or, if you are working on a system with the `make` command installed:
 If we assume the following:
 
 * `server` means pubsocketd itself
-* `client` means a websocket client, for example the same HTML/JS page in the `client` folder
+* `client` means a WebSocket client, for example the same HTML/JS page in the `client` folder
 * `pubsub` means something that publishes pubsub messages
 
 ### server
 
-The first thing to do is start the `pubsocketd` server to accept websocket connections and relay pubsub messages.
+The first thing to do is start the `pubsocketd` server to accept WebSocket connections and relay pubsub messages.
 
 	$> ./pubsocketd -ws-origin=http://example.com
 	2014/07/20 13:43:50 [init] listening for websocket requests on 127.0.0.1:8080
@@ -34,7 +34,7 @@ See the `-ws-origin` flag? That's important and is discussed in detail below.
 
 ### client
 
-Next start a websocket client and connect to the `pubsocketd` server.
+Next start a WebSocket client and connect to the `pubsocketd` server.
 
 	var socket = new WebSocket('ws://127.0.0.1:8080');
 
@@ -69,7 +69,7 @@ Something like this should be printed to your `pubsocketd` server logs.
 
 ### client
 
-Let's imagine that your client is set up to simply write websocket messages to the browser's console log.
+Let's imagine that your client is set up to simply write WebSocket messages to the browser's console log.
 
 	socket.onmessage = function(rsp){
 
@@ -120,6 +120,12 @@ The path that this server will listen for connections on.
 A list of valid hosts that may connect to this server.
 
 Currently multiple hosts are not supported but will be in time.
+
+### -ws-insecure=false
+
+A boolean flag indicating that the WebSocket server should be run in "insecure" mode which will allow connections from any host.
+
+This is available only for debugging and should **not** be enabled for production use.
 
 ## See also
 
