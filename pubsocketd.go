@@ -9,10 +9,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"io"
 	"strings"
 )
 
 var (
+	logger                    *log.Logger
 	redisHost                 string
 	redisPort                 int
 	redisChannel              string
@@ -155,6 +158,18 @@ func main() {
 
 	flag.Parse()
 
+	output := "file.txt"
+	file, err := os.OpenFile(output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+
+	if err != nil {
+	   panic(err)
+	}
+
+	multi := io.MultiWriter(file, os.Stdout)
+
+	logger := log.New(multi, "[pubsocketd]", log.Ldate|log.Ltime|log.Lshortfile)
+
+	logger.Println("hello")
 	if websocketAllowableOrigins == "" {
 		err, _ := fmt.Printf("Missing allowable Origin (-ws-origin=http://example.com)")
 		panic(err)
