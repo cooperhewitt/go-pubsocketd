@@ -2,6 +2,8 @@
 
 Listen to a Redis PubSub chanhel and then rebroadcast over WebSockets.
 
+The long version is available in this blog post titled [The Medium is the Message](http://labs.cooperhewitt.org/2014/the-medium-is-the-message-and-pubsocketd/).
+
 ## Building
 
 	$> export GOPATH=/path/to/go-pubsocketd
