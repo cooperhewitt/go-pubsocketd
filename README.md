@@ -117,9 +117,9 @@ The port that this server will listen for connections on.
 
 The path that this server will listen for connections on.
 
-### -ws-origin= _required_
+### -ws-origin=http://example.com
 
-A list of valid hosts that may connect to this server.
+A list of valid hosts that may connect to this server. This flag is required unless you are running `pubsocketd` in "insecure mode" (details below) which you should not do for production use.
 
 Currently multiple hosts are not supported but will be in time.
 
