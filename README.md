@@ -127,6 +127,10 @@ A boolean flag indicating that the WebSocket server should be run in "insecure" 
 
 This is available only for debugging and should **not** be enabled for production use.
 
+### -ps-log-file="/var/log/pubsocketd.log"
+
+Write all logging to this file, as well as STDOUT.
+
 ## See also
 
 * http://redis.io/topics/pubsub
