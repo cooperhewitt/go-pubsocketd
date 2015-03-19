@@ -1,0 +1,66 @@
+#!/bin/sh -e
+
+PSD_USER=YOUR_PSD_SERVER_USER
+PSD_DAEMON=YOUR_PSD_SERVER_PATH
+
+# adjust to taste: https://github.com/cooperhewitt/go-pubsocketd#pubsocketd-command-line-options
+PSD_ARGS=""
+
+PID_PATH=/var/run/
+PID_NAME='ucd-server'
+PID_FILE=${PID_PATH}${PID_NAME}.pid
+
+if [ "$(id -u)" != "0" ]; then
+    echo "This script must be run as root" 1>&2
+    exit 1
+fi
+
+case $1 in
+    debug)
+
+        echo "Starting ucd in debug mode w/ options: ${PSD_ARGS}"
+        exec sudo -u $PSD_USER $PSD_DAEMON $PSD_ARGS
+        ;;
+    start)
+
+	if [ -e "${PID_FILE}" ]; then
+            echo "Error! ${PID_NAME} is currently running!" 1>&2
+            exit 1
+	fi
+
+        echo "Starting ucd w/ options: ${PSD_ARGS}"
+        PID=`exec sudo -u $PSD_USER $PSD_DAEMON $PSD_ARGS  > /dev/null 2>&1 & echo $!`
+
+        if [ -z $PID ]; then
+            printf "%s\n" "Fail"
+        else
+            echo $PID > $PID_FILE
+            printf "%s\n" "Ok"
+	    echo $PID
+        fi
+
+        ;;
+    stop)
+
+	printf "%-50s" "Stopping $PID_NAME"
+        PID=`cat $PID_FILE`
+
+        if [ -f $PID_FILE ]; then
+            kill -HUP $PID
+            printf "%s\n" "Ok"
+            rm -f $PID_FILE
+        else
+            printf "%s\n" "pidfile not found"
+        fi
+
+        ;;
+    restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|debug}" >&2
+        exit 1
+        ;;
+esac
