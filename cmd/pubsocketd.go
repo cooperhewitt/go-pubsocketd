@@ -1,10 +1,11 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
+	// "code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"gopkg.in/redis.v1"
 	"io"
 	"log"
