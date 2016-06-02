@@ -7,7 +7,7 @@ The long version is available in this blog post titled [The Medium is the Messag
 ## Building
 
 	$> export GOPATH=/path/to/go-pubsocketd
-	$> go get code.google.com/p/go.net/websocket
+	$> go get golang.org/x/net/websocket
 	$> go get gopkg.in/redis.v1
 	$> go build pubsocketd.go
 
@@ -32,7 +32,7 @@ The first thing to do is start the `pubsocketd` server to accept WebSocket conne
 	2014/07/20 13:43:50 [init] listening for websocket requests on 127.0.0.1:8080
 	2014/07/20 13:43:50 [init] listening for pubsub messages from 127.0.0.1:6379#pubsocketd
 
-See the `-ws-origin` flag? That's important and is discussed in detail below.
+See the `-ws-origin` flag? That's important and is discussed in detail below. If you include `-tls-cert` and `-tls-key` flags `pubsocketd` will speak TLS and you should use `wss:` instead of `ws:` on the client.
 
 ### client
 
@@ -146,7 +146,7 @@ Write all logging to this file, as well as STDOUT.
 * http://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
 * http://tools.ietf.org/id/draft-abarth-origin-03.html
 * https://github.com/mroth/sseserver
- 
+
 ## Shout-outs
 
 Props to [Richard Crowley](https://github.com/rcrowley) for patient comments and suggestions along the way.
