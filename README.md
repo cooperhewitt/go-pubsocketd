@@ -147,6 +147,18 @@ Write all logging to this file, as well as STDOUT.
 * http://tools.ietf.org/id/draft-abarth-origin-03.html
 * https://github.com/mroth/sseserver
 
+## Gotchas
+
+If you're running the server in a VM, you may need to explicitly run on host `0.0.0.0` instead of the default `127.0.0.1`:
+
+```
+-ws-host=0.0.0.0
+```
+
+Also, if you're using a self-signed SSL certificate, you'll probably need to visit `https://localhost:8080/` or whatever the address is, and create an exception for the SSL validation error.
+
+There's some discussion of the port forwarding issue on [Stack Overflow](http://stackoverflow.com/questions/23840098/empty-reply-from-server-cant-connect-to-vagrant-vm-w-port-forwarding).
+
 ## Shout-outs
 
 Props to [Richard Crowley](https://github.com/rcrowley) for patient comments and suggestions along the way.
