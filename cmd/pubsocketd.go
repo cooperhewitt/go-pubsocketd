@@ -30,6 +30,8 @@ var (
 	websocketAllowableOrigins string
 	websocketAllowableURLs    []url.URL
 	redisClient               *redis.Client
+	tlsCert                   string
+	tlsKey                    string
 )
 
 // What I'd really like to do is pass in a list of allowable Origin
@@ -171,6 +173,8 @@ func main() {
 	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
 	flag.StringVar(&redisChannel, "rs-channel", "pubsocketd", "Redis channel")
 	flag.StringVar(&logFile, "ps-log-file", "", "Log requests to this file")
+	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS certificate")
+	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS key")
 
 	flag.Parse()
 
@@ -248,7 +252,13 @@ func main() {
 
 	logger.Printf("[init] listening for pubsub messages from " + redisEndpoint + " sent to the " + redisChannel + " channel")
 
-	if err := http.ListenAndServe(websocketEndpoint, nil); err != nil {
-		logger.Fatalf("Failed to start websocket server, because %v", err)
+	if tlsCert != "" && tlsKey != "" {
+		if err := http.ListenAndServeTLS(websocketEndpoint, tlsCert, tlsKey, nil); err != nil {
+			logger.Fatalf("Failed to start websocket server, because %v", err)
+		}
+	} else {
+		if err := http.ListenAndServe(websocketEndpoint, nil); err != nil {
+			logger.Fatalf("Failed to start websocket server, because %v", err)
+		}
 	}
 }
