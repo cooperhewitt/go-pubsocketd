@@ -6,15 +6,13 @@ The long version is available in this blog post titled [The Medium is the Messag
 
 ## Building
 
-	$> export GOPATH=/path/to/go-pubsocketd
-	$> go get golang.org/x/net/websocket
-	$> go get gopkg.in/redis.v1
-	$> go build pubsocketd.go
+The easiest way to get started is to use the handy `build` target in local Makefile
 
-Or, if you are working on a system with the `make` command installed:
+```
+make build
+```
 
-	$> make deps
-	$> make build
+All of the package's dependencies are included with this repository (in the `vendor` directory) but you will still need to have a copy of [Go](http://www.golang.org) installed on your computer.
 
 ## Example
 
@@ -28,9 +26,11 @@ If we assume the following:
 
 The first thing to do is start the `pubsocketd` server to accept WebSocket connections and relay pubsub messages.
 
-	$> ./pubsocketd -ws-origin=http://example.com
-	2014/07/20 13:43:50 [init] listening for websocket requests on 127.0.0.1:8080
-	2014/07/20 13:43:50 [init] listening for pubsub messages from 127.0.0.1:6379#pubsocketd
+```
+$> ./pubsocketd -ws-origin=http://example.com
+2014/07/20 13:43:50 [init] listening for websocket requests on 127.0.0.1:8080
+2014/07/20 13:43:50 [init] listening for pubsub messages from 127.0.0.1:6379#pubsocketd
+```
 
 See the `-ws-origin` flag? That's important and is discussed in detail below. If you include `-tls-cert` and `-tls-key` flags `pubsocketd` will speak TLS and you should use `wss:` instead of `ws:` on the client.
 
@@ -38,11 +38,13 @@ See the `-ws-origin` flag? That's important and is discussed in detail below. If
 
 Next start a WebSocket client and connect to the `pubsocketd` server.
 
-	var socket = new WebSocket('ws://127.0.0.1:8080');
+```
+var socket = new WebSocket('ws://127.0.0.1:8080');
 
-	socket.onopen = function(e){
-		console.log(e);
-	};
+socket.onopen = function(e){
+	console.log(e);
+};
+```
 
 Something like this should be printed to your browser's console log.
 
@@ -52,40 +54,50 @@ Something like this should be printed to your browser's console log.
 
 Something like this should be printed to your `pubsocketd` server logs.
 
+```
 	2014/07/20 13:43:52 [127.0.0.1:50005][connect] hello world
+```
 
 ### pubsub
 
 Now publish a pubsub message to the `pubsocketd` channel. This example does so using Python but there are many other language implementations.
 
-	$> python
-	import redis
-	r = redis.Redis()
-	r.publish('pubsocketd', {'foo': 1, 'bar': 2})
+```
+$> python
+import redis
+r = redis.Redis()
+r.publish('pubsocketd', {'foo': 1, 'bar': 2})
+```
 
 ### server
 
 Something like this should be printed to your `pubsocketd` server logs.
 
-	2014/07/20 13:43:57 [127.0.0.1:50005][send] {'foo': 1, 'bar': 2}
+```
+2014/07/20 13:43:57 [127.0.0.1:50005][send] {'foo': 1, 'bar': 2}
+```
 
 ### client
 
 Let's imagine that your client is set up to simply write WebSocket messages to the browser's console log.
 
-	socket.onmessage = function(rsp){
+```
+socket.onmessage = function(rsp){
 
-		var data = rsp['data'];
-		data = JSON.parse(data);
+	var data = rsp['data'];
+	data = JSON.parse(data);
 
-		console.log(rsp);
-		console.log(data);
-	};
+	console.log(rsp);
+	console.log(data);
+};
+```
 
 The code above would yield something like this:
 
+```
 	message { target: WebSocket, data: ""{'foo': 1, 'bar': 2}"", origin: "ws://127.0.0.1:8080", lastEventId: "", isTrusted: true, eventPhase: 0, bubbles: false, cancelable: false, defaultPrevented: false, timeStamp: 1405878237791142, originalTarget: WebSocket } index.html:16
 	Object { foo: 1, bar: 2}
+```
 
 The rest is up to you!
 
@@ -132,6 +144,64 @@ This is available only for debugging and should **not** be enabled for productio
 ### -ps-log-file="/var/log/pubsocketd.log"
 
 Write all logging to this file, as well as STDOUT.
+
+## Utilities
+
+There are command-line tools that are included to help test and debug your instance of `pubsocketd`. First of all let's assume that you've started a copy of `pubsocketd` with the following arguments:
+
+```
+./bin/pubsocketd -ws-origin http://localhost
+[pubsocketd] 2016/06/08 04:31:21 pubsocketd.go:250: [init] listening for websocket requests on 127.0.0.1:8080/, from http://localhost
+[pubsocketd] 2016/06/08 04:31:21 pubsocketd.go:253: [init] listening for pubsub messages from 127.0.0.1:6379 sent to the pubsocketd channel
+```
+
+### pubsocketd-publisher
+
+`pubsocketd-publisher` reads input from STDIN, encodes it as a JSON string and broadcasts the message over a Redis PubSub channel.
+
+```
+./bin/pubsocketd-publisher -h
+Usage of ./bin/pubsocketd-publisher:
+  -channel string
+    	   Redis channel (default "pubsocketd")
+  -host string
+    	Redis host (default "127.0.0.1")
+  -port int
+    	Redis port (default 6379)
+```
+
+For example:
+
+```
+./bin/pubsocketd-publisher
+2016/06/08 04:35:48 connecting to 127.0.0.1:6379...
+2016/06/08 04:35:48 connected to 127.0.0.1:6379 and ready to send new messages
+PEW PEW PEW
+WOO WOO WOO
+```
+
+### pubsocketd-receiver
+
+`pubsocketd-receiver` listens for messages from a WebSocket connections and prints each one to STDOUT.
+
+```
+./bin/pubsocketd-receiver -h
+Usage of ./bin/pubsocketd-receiver:
+  -origin string
+    	  The origin header to send
+  -url string
+       The websocket URL to connect to (default "ws://127.0.0.1:8080")
+```
+
+For example:
+
+```
+./bin/pubsocketd-receiver -origin http://localhost
+2016/06/08 04:35:59 dialing ws://127.0.0.1:8080...
+2016/06/08 04:35:59 connected to ws://127.0.0.1:8080 and ready to receive new messages
+2016/06/08 04:36:09 {"Data":"PEW PEW PEW"}
+2016/06/08 04:36:25 {"Data":"WOO WOO WOO"}
+```
 
 ## See also
 

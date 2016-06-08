@@ -8,14 +8,10 @@ import (
 
 func main() {
 
-	var url = flag.String("url", "", "The websocket URL to connect to")
+	var url = flag.String("url", "ws://127.0.0.1:8080", "The websocket URL to connect to")
 	var origin = flag.String("origin", "", "The origin header to send")
 
 	flag.Parse()
-
-	if *url == "" {
-		log.Fatal("Missing 'url' parameter")
-	}
 
 	log.Printf("dialing %s...\n", *url)
 
@@ -25,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("connected to %s\n", *url)
+	log.Printf("connected to %s and ready to receive new messages\n", *url)
 
 	for {
 		var msg = make([]byte, 512)
