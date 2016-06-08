@@ -2,3 +2,4 @@
 pubsocketd
 pkg
 src
+!vendor/src
