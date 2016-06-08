@@ -17,6 +17,8 @@ deps:   self
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/pubsocketd cmd/pubsocketd.go
+	@GOPATH=$(GOPATH) go build -o bin/pubsocketd-publisher cmd/pubsocketd-publisher.go
+	@GOPATH=$(GOPATH) go build -o bin/pubsocketd-receiver cmd/pubsocketd-receiver.go
 
 vendor: rmdeps deps
 	if test -d vendor/src; then rm -rf vendor/src; fi
