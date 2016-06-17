@@ -249,7 +249,6 @@ class HeartbeatThread(Thread):
         while not self.stopped.wait(30):
             print "(beat)"
             r.publish('notifications', '{"heartbeat": 1}')
-            # call a function
 
 stopFlag = Event()
 thread = HeartbeatThread(stopFlag)
