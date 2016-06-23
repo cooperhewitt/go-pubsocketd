@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 	websocketAllowInsecure    bool
 	websocketAllowableOrigins string
 	websocketAllowableURLs    []url.URL
+	websocketHeartbeat        bool
 	redisClient               *redis.Client
 	tlsCert                   string
 	tlsKey                    string
@@ -115,7 +117,23 @@ func pubsocketdHandshake(config *websocket.Config, req *http.Request) (err error
 	return
 }
 
+func pubsocketHeartbeat(ws *websocket.Conn) {
+	ticker := time.NewTicker(time.Second * 30)
+	json_blob := "{\"heartbeat\": 1}"
+	for t := range ticker.C {
+		if err := websocket.JSON.Send(ws, json_blob); err != nil {
+			logger.Printf("[error] failed to send heartbeat (%v) JSON, because %v", t, err)
+			// ws.Close()
+			break
+		}
+	}
+}
+
 func pubSubHandler(ws *websocket.Conn) {
+
+	if websocketHeartbeat {
+		go pubsocketHeartbeat(ws)
+	}
 
 	remoteAddr := ws.Request().RemoteAddr
 	headers := ws.Request().Header
@@ -169,6 +187,7 @@ func main() {
 	flag.StringVar(&websocketRoute, "ws-route", "/", "WebSocket route")
 	flag.StringVar(&websocketAllowableOrigins, "ws-origin", "", "WebSocket allowable origin(s)")
 	flag.BoolVar(&websocketAllowInsecure, "ws-insecure", false, "Allow WebSocket server to run in insecure mode")
+	flag.BoolVar(&websocketHeartbeat, "ws-heartbeat", false, "Keep WebSocket alive with heartbeat messages")
 	flag.StringVar(&redisHost, "rs-host", "127.0.0.1", "Redis host")
 	flag.IntVar(&redisPort, "rs-port", 6379, "Redis port")
 	flag.StringVar(&redisChannel, "rs-channel", "pubsocketd", "Redis channel")

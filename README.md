@@ -141,6 +141,10 @@ A boolean flag indicating that the WebSocket server should be run in "insecure" 
 
 This is available only for debugging and should **not** be enabled for production use.
 
+### -ws-heartbeat=false
+
+A boolean flag that activates a keep-alive heartbeat message, sent once every 30 seconds.
+
 ### -ps-log-file="/var/log/pubsocketd.log"
 
 Write all logging to this file, as well as STDOUT.
@@ -233,36 +237,7 @@ There's some discussion of the port forwarding issue on [Stack Overflow](http://
 
 There's another gotcha that has to do with maintaining an open connection when the site is running through an AWS Elastic Load Balancer. It seems that after 60 seconds of inactivity the connection consistently stops working (even with some reconnection logic on the client side). There might be an ELB configuration to turn this timeout off, but I do not presently know what it is, and we probably want to keep a timeout in place to keep our servers happy. (We did try enabling `proxy_prococol` with nginx, which _seemed_ like the right solution. It wasn't.)
 
-A workaround that does work is to send out a ping every 30 seconds (really any span of time less than 60 seconds). That keeps the connection alive. We can bake this functionality into the `pubsocketd` server, but in the meantime here's a sample Python script that works:
-
-```
-from threading import Thread, Event
-import redis
-
-class HeartbeatThread(Thread):
-    def __init__(self, event):
-        Thread.__init__(self)
-        self.stopped = event
-
-    def run(self):
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        while not self.stopped.wait(30):
-            print "(beat)"
-            r.publish('notifications', '{"heartbeat": 1}')
-
-stopFlag = Event()
-thread = HeartbeatThread(stopFlag)
-thread.start()
-```
-
-Note: this doesn't respond properly to `ctrl-C` signals. To shut it down, you can do this instead:
-
-```
-ctrl-Z
-ps -aux | grep heartbeat.py
-kill [PID number]
-fg
-```
+A workaround that does work is to send out a ping every 30 seconds (really any span of time less than 60 seconds). That keeps the connection alive. Use the option `-ws-heartbeat` to send out a `{"heartbeat": 1}` message every 30 seconds.
 
 ## Shout-outs
 
